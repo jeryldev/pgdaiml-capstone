@@ -38,6 +38,13 @@ else
   ./.venv/bin/pip install -r requirements.txt
 fi
 
+# Fetch the dataset using the freshly built venv's Python for verification.
+# The standalone data/download_data.sh still works on its own; this just reuses it.
 echo
-echo "Environment ready. Activate it once in your shell:"
+echo "Fetching dataset..."
+SETUP_PYBIN="$(pwd)/.venv/bin/python" bash data/download_data.sh
+
+echo
+echo "Setup complete. Activate the environment once in your shell:"
 echo "    source .venv/bin/activate"
+echo "Then launch:  jupyter lab"

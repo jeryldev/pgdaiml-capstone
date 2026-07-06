@@ -45,17 +45,26 @@ See `data/README.md` for provenance, and *Data & citation* below.
 ## Setup
 
 Requires **Python ≥ 3.11**. [uv](https://docs.astral.sh/uv/) is recommended (faster) but optional —
-`setup.sh` uses uv if present and falls back to `venv` + `pip` otherwise.
+`setup.sh` uses uv if present and falls back to `venv` + `pip` otherwise. One command builds the
+environment **and** fetches the dataset.
 
 ```bash
 # optional: curl -LsSf https://astral.sh/uv/install.sh | sh
-./setup.sh                    # build .venv (uv if present, else venv+pip) + install deps
+./setup.sh                    # build .venv + install deps + fetch dataset
 source .venv/bin/activate     # activate once per shell
-bash data/download_data.sh    # fetch dataset -> verified: rows=4424, cols=37
 jupyter lab
 ```
 
-Pure pip, by hand: `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`
+If `./setup.sh` reports `permission denied`, mark it executable first: `chmod +x setup.sh`
+(or run it as `bash setup.sh`).
+
+Refresh the dataset later, without rebuilding the environment:
+
+```bash
+bash data/download_data.sh
+```
+
+Pure pip, by hand: `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && bash data/download_data.sh`
 
 ## Data & citation
 Licensed **CC BY 4.0** (reuse permitted with attribution). Full attribution in `data/README.md`.

@@ -13,9 +13,10 @@ rm -f raw/dropout.zip
 [ -f raw/data.csv ] && mv -f raw/data.csv raw/dropout.csv
 echo "Done -> data/raw/dropout.csv"
 
-# Verification — prefers the project venv's python; never fatal.
-PYBIN="python3"
-[ -x "$ROOT/.venv/bin/python" ] && PYBIN="$ROOT/.venv/bin/python"
+# Verification — prefers a caller-provided python ($SETUP_PYBIN), then the
+# project venv, then system python3. Never fatal.
+PYBIN="${SETUP_PYBIN:-python3}"
+[ -x "$ROOT/.venv/bin/python" ] && [ "$PYBIN" = "python3" ] && PYBIN="$ROOT/.venv/bin/python"
 if "$PYBIN" -c "import pandas" 2>/dev/null; then
   "$PYBIN" - <<'PY'
 import pandas as pd
