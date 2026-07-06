@@ -1,0 +1,19 @@
+# Raw & processed data — re-fetchable via data/download_data.sh (CC BY 4.0),
+# so we keep it out of git to stay lean. .gitkeep preserves the empty dirs.
+data/raw/*.csv
+data/raw/*.zip
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
