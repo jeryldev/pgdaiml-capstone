@@ -1,3 +1,5 @@
+# Predicting Student Dropout — with a Fairness Audit
+
 Capstone (PGD AI/ML, Pillar 5). Predicts whether a student will **drop out** of higher
 education using enrollment-time data, then **audits the model for bias** across gender,
 age, and socioeconomic status.
@@ -15,7 +17,7 @@ age, and socioeconomic status.
 ## Dataset
 UCI *Predict Students' Dropout and Academic Success* (Realinho et al., 2021; Instituto
 Politécnico de Portalegre, Portugal). 4,424 students × 36 features + target.
-DOI: 10.24432/C5MC89 · License: CC BY 4.0. See `data/README.md`.
+See `data/README.md` for provenance, and *Data & citation* below.
 
 ## Rubric map (100 pts + 5 bonus)
 | Step | Deliverable | Where |
@@ -41,7 +43,26 @@ DOI: 10.24432/C5MC89 · License: CC BY 4.0. See `data/README.md`.
 - [ ] **Bonus** GenAI notebook / Phase-2 comparison / deployment
 
 ## Setup
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-bash data/download_data.sh
+
+Requires **Python ≥ 3.11**. [uv](https://docs.astral.sh/uv/) is recommended (faster) but optional —
+`setup.sh` uses uv if present and falls back to `venv` + `pip` otherwise.
+
+```bash
+# optional: curl -LsSf https://astral.sh/uv/install.sh | sh
+./setup.sh                    # build .venv (uv if present, else venv+pip) + install deps
+source .venv/bin/activate     # activate once per shell
+bash data/download_data.sh    # fetch dataset -> verified: rows=4424, cols=37
 jupyter lab
+```
+
+Pure pip, by hand: `python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`
+
+## Data & citation
+Licensed **CC BY 4.0** (reuse permitted with attribution). Full attribution in `data/README.md`.
+- **Dataset** — Realinho, V., Vieira Martins, M., Machado, J., & Baptista, L. (2021).
+  *Predict Students' Dropout and Academic Success* [Dataset]. UCI Machine Learning Repository.
+  DOI: [10.24432/C5MC89](https://doi.org/10.24432/C5MC89).
+- **Introductory paper** — Martins, M. V., Tolledo, D., Machado, J., Baptista, L. M. T., & Realinho, V. (2021).
+  Early prediction of student's performance in higher education: a case study. *Trends and Applications
+  in Information Systems and Technologies* (WorldCIST 2021), AISC vol. 1365, Springer, pp. 166–175.
+  DOI: [10.1007/978-3-030-72657-7_16](https://doi.org/10.1007/978-3-030-72657-7_16).
