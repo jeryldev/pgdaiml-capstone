@@ -1,13 +1,13 @@
 # Predicting Student Dropout, with a Fairness Audit
 
-My capstone for the PGD AI/ML program, Pillar 5. I predict whether a student will **drop out** of higher education using enrollment-time data, then I **audit the model for bias** across gender, age, and socioeconomic status.
+A capstone for the PGD AI/ML program, Pillar 5. It predicts whether a student will **drop out** of higher education using enrollment-time data, then **audits the model for bias** across gender, age, and socioeconomic status.
 
 ## Problem framing
 - **Domain.** Education, predicting student dropout risk, a listed domain.
 - **Task.** Binary classification, Dropout vs Graduate, with `Enrolled` (about 18 percent) dropped.
 - **Label.** `dropout = 1` when `Target == "Dropout"`, else `0` for Graduate.
 - **Class balance.** About 39 percent dropout, mildly uneven, not severe.
-- **Metrics.** Recall on dropout, PR AUC, and ROC AUC. I report accuracy but do not rely on it.
+- **Metrics.** Recall on dropout, PR AUC, and ROC AUC. Accuracy is reported but not relied on.
 - **Business value.** Intervention value against cost, anchored to Portuguese tuition, about 2,100 euros per student.
 - **Fairness goal.** Comparable error rates across gender, age band, and socioeconomic groups (scholarship, debtor), using demographic parity, equalized odds, and disparate impact.
 
@@ -48,7 +48,7 @@ source .venv/bin/activate     # activate once per shell
 jupyter lab
 ```
 
-If `./setup.sh` reports permission denied, I mark it executable first with `chmod +x setup.sh`, or run it as `bash setup.sh`.
+If `./setup.sh` reports permission denied, mark it executable first with `chmod +x setup.sh`, or run it as `bash setup.sh`.
 
 To refresh the dataset later, without rebuilding the environment.
 
