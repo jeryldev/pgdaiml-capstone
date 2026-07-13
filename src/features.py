@@ -44,7 +44,15 @@ _BASIC = {11, 19, 26, 27, 29, 30, 37, 38}                         # up to 9th ye
 _NONE = {35, 36}                                                  # cannot read, or below 4th year
 
 # Code 34 is "Unknown". It maps to nan and then fills to the rung most parents sit
-# on, so a missing answer does not quietly read as a low one.
+# on, secondary.
+#
+# This is a defensible default and it is not a neutral one, so Step 3 says so out
+# loud rather than leaving the assumption buried down here. Filling to the middle
+# assumes a missing answer means a typical parent. It might not. A parent who did
+# not answer may be one with less schooling, or less time, or less trust in the
+# institution asking, in which case non-response is itself a signal of disadvantage
+# and this fill quietly erases it. Kept anyway, because the alternatives cost more
+# than they are likely to buy on a handful of rows.
 _UNKNOWN_FILL = 2.0
 
 
@@ -67,10 +75,24 @@ def isco_group(code: int) -> str:
     The source mixes one-digit major groups (0 to 10) with three-digit detailed
     codes, and in the detailed codes the first digit is the major group. Codes 90
     and 99 mean other or blank, so both land in one bucket.
+
+    On why "1" and "10" are two groups and not a boundary bug.
+
+    Generic ISCO-08 has ten major groups, 0 to 9. A reader who knows the standard
+    will look at the "10" bucket and reasonably suspect an off-by-one. It is not.
+    This dataset does not use raw ISCO. It uses its own top-level occupation scheme
+    running 0 to 10, in which 10 is "Armed Forces Professions" and is genuinely a
+    different thing from 1, "Directors and Managers". Keeping them apart is right.
+
+    The two branches also cannot collide. A three-digit code folds to its first
+    digit, so 122 becomes "1", and no three-digit code can land in "10". Checked
+    against every occupation code that actually appears in the file: 32 distinct
+    mother codes, 46 father codes, no collisions.
     """
     if code in (90, 99):
         return "other"
     if code < 11:
+        # Already a top-level code, 10 = Armed Forces included. Keep it as it is.
         return str(code)
     return str(code)[0]
 

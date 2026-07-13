@@ -17,7 +17,7 @@ This project builds that tool on real data from a Portuguese polytechnic, and th
 
 The final model is a logistic regression. At a cutoff chosen deliberately against the school's own staffing capacity, it catches **79.6 percent** of the students who go on to drop out, using only enrollment-time information. It is simple enough to explain itself, which turns out to matter more than any accuracy figure in this project.
 
-Three findings are worth leading with, and all three came from correcting a mistake.
+Four findings are worth leading with, and every one of them came from correcting a mistake.
 
 **The model is not mostly a money model.** Once SHAP values are summed back onto the features they came from, rather than left scattered across one-hot columns, the strongest driver is **which course a student enrolled in**, and the third strongest is **what their mother does for a living**. Tuition status sits second. So the model substantially recognises students who started from further back, not students in trouble.
 
@@ -25,7 +25,7 @@ Three findings are worth leading with, and all three came from correcting a mist
 
 **The real harm is a recall gap.** The model catches **87.7 percent of male dropouts and 70.0 percent of female ones**. Three in ten women who go on to leave are never flagged at all. That does not appear in any flagging-rate metric. It only appears once you stop counting flags and start counting errors.
 
-A fairness reduction closes that gap to 0.009 for eight points of recall. The alternative closes it by helping fewer people, which is not a fix.
+**And rigor does not generalize on its own.** I spent Step 4 refusing to call a 0.005 lead real against a 0.020 fold swing — then walked into Step 5 and quoted fairness numbers to three decimals off 130 female dropouts. A bootstrap shows the two mitigations are **tied on fairness**, statistically indistinguishable, and that the only difference surviving resampling is what they cost: eight points of recall against nineteen. The harm survived the check. My reason for picking a fix did not.
 
 The honest conclusion is that the model works and should not be trusted blindly. It belongs in the hands of a support team, as a ranked prompt to start a conversation, not as a verdict attached to a student's record.
 
@@ -286,6 +286,10 @@ XGBoost leads by 0.005. Before taking it, look at how much the five folds disagr
 
 **The gap is 0.005. The folds swing by 0.020.** The lead is inside the noise. Rerun with a different seed and the order could flip. XGBoost is not better than logistic regression on this data — it is tied with it, and it happened to land on top.
 
+![Fold-to-fold spread](figures/model_fold_noise.png)
+
+The chart is the argument. Each dot is one fold. The two ranges overlap almost completely, and the distance between the means disappears inside them.
+
 **The choice is logistic regression.** Not because it scores highest, because it does not. Because when two models are tied, the tiebreak should be something that matters, and here that is whether a student can be told why they were flagged. A logistic coefficient is a number a tutor can read out loud. A boosted ensemble of 300 trees is not.
 
 ### The threshold nobody chose
@@ -305,6 +309,10 @@ Step 1 wrote down a business case and then never used it again. The cutoff is ex
 
 **The default is capacity 40 percent.** That is all it ever was — a staffing decision made by accident, by a library default. Move it to 45 percent and recall climbs to **0.796** on the same model and the same data.
 
+One thing to be precise about, since this section says "probability" a great many times. `class_weight="balanced"` shifts the intercept to make the rarer class easier to reach, and in doing so it **decalibrates** the outputs. So 0.445 is not a claim that a student has a 44.5 percent chance of dropping out. It is a position in a ranking.
+
+That is fine, and it is worth explaining why rather than waving at it. Nothing downstream needs the number to be a true probability. The capacity rule picks a **quantile** of the out-of-fold scores, which only needs the ranking to be right. The expected-value table below counts **realized outcomes** at each cutoff rather than trusting the scores to be probabilities. And Step 5 commits to never showing the score to a student at all. These are ranking scores, and only the ranking is ever used.
+
 Then the Step 1 numbers get a say:
 
 | Outreach cost | Best threshold | Flagged | Recall | Value per 1,000 students |
@@ -313,13 +321,21 @@ Then the Step 1 numbers get a say:
 | 150 EUR | 0.34 | 59.4% | 0.870 | 125,289 EUR |
 | 300 EUR | 0.61 | 34.4% | 0.658 | 58,967 EUR |
 
+![Expected value against cutoff](figures/expected_value.png)
+
 The economics say **flag broadly**. A saved student returns 630 euros in expectation against 150 to reach one, so at the middle cost the model wants to contact 59 percent of the cohort. That is a strange thing for a targeting tool to say, and it is worth sitting with rather than hiding: when a save is worth four times what a contact costs, being wrong is cheap and missing someone is not. There is barely any triage left to do.
 
-Which points at what this tool actually is. **The ranked list is the product. The binary flag is not.** A tutor working down a list from most at risk to least does not need a cutoff at all.
+**The chart caught me being sloppy, and the table had let me get away with it.** I had written that staff time runs out long before the economics do. Look at the 300 EUR curve — it peaks at **0.61, tighter than the capacity line**. At that cost the economics want *fewer* flags than the tutoring team could handle, and capacity is not the binding constraint at all.
 
-A cutoff is still needed to audit fairness and report one honest number, so it goes at **0.445**, the capacity-45-percent point. Staff time runs out long before the economics do.
+So the honest version carries a condition. Staff capacity binds at 50 and 150 EUR per contact. At 300 EUR the money binds first. Which regime the school is in depends on a number I do not have — and three rows of a table let me write straight past that. The curve does not.
+
+What survives either way: **the ranked list is the product, and the binary flag is not.** A tutor working down a list from most at risk to least does not need a cutoff, and does not care which constraint binds.
+
+A cutoff is still needed to audit fairness and report one honest number, so it goes at **0.445**, the capacity-45-percent point — which assumes the capacity-limited regime, the case at the low and middle outreach costs.
 
 ### At the operating point
+
+![The operating point](figures/operating_point.png)
 
 | | Not flagged | Flagged |
 |---|---|---|
@@ -417,17 +433,43 @@ Both methods target **equalized odds**, not demographic parity. The harm is an e
 | Threshold optimizer | 0.609 | 0.783 | 0.781 | 0.100 | 0.026 | 0.026 |
 | **Exponentiated gradient** | **0.718** | 0.685 | 0.760 | 0.131 | 0.027 | **0.009** |
 
-**Both land in almost exactly the same place on fairness.** Error gap 0.026 against 0.027. On the recall gap — the one that measures the harm actually found — the reduction is better, 0.009 against 0.026. Fairness is a wash.
+Reading those numbers, my first instinct was to say the reduction closes the recall gap *better*, 0.009 against 0.026.
 
-**The cost is not a wash at all.**
+I should not have said that, and Step 4 is the reason why.
 
-The **threshold optimizer** drops recall from 0.796 to **0.609**. Nineteen points, gone. It closed the gap between men and women largely by catching fewer people, so it bought fairness by missing more students of both kinds. Accuracy went *up* while the tool got *worse* at its job — a useful reminder of how little accuracy is worth on a problem shaped like this.
+In Step 4 I refused to hand XGBoost the win for a 0.005 lead, because the folds swung by 0.020 and a gap smaller than the noise is not a gap. **Then I came here and quoted fairness numbers to three decimals off a single 726-row split without ever asking what the noise was.** The rigor was pointing in one direction only. So I went back and asked — 2,000 seeded bootstrap resamples of the test set.
 
-The **exponentiated gradient** drops recall to **0.718**. Eight points. Same fairness, less than half the price, and what comes out is still a logistic regression that can explain itself.
+| | Point estimate | 95% interval | |
+|---|---|---|---|
+| Baseline recall gap | +0.177 | [+0.082, +0.274] | **real** |
+| Threshold optimizer recall gap | −0.026 | [−0.142, +0.090] | indistinguishable from zero |
+| Exponentiated gradient recall gap | −0.009 | [−0.118, +0.101] | indistinguishable from zero |
+| **TO gap minus EG gap** | +0.008 | [−0.057, +0.076] | **tied** |
+| **EG recall minus TO recall** | **+0.109** | **[+0.075, +0.146]** | **real** |
 
-**Take the exponentiated gradient.** Eight points of recall is a real cost, roughly thirty fewer leavers caught per thousand students, and it should be written down plainly rather than buried. What it buys is that those thirty are not disproportionately women.
+Three things fall out of that.
+
+**The harm is real.** The 0.177 gap never crosses zero across two thousand resamples. The model is worse at finding female dropouts, every time. This finding stands.
+
+**But the third decimal was noise, and I was reading it.** The recall gap rests on **130 female dropouts and 154 male ones** — not 726 students, which is the size of the test set, not the size of the thing the metric depends on. **0.009 is not better than 0.026. They are the same number wearing different clothes.** Catching myself making the exact error I had refused to make one notebook earlier is a humbling way to learn that rigor is not a mood you can be in. It is a check you run.
+
+**And exactly one difference survives.** The recall cost, at +0.109 with an interval nowhere near zero. Which means the decision was never really about fairness at all.
+
+### The verdict, on the one thing that survives
+
+**The two mitigations are tied on fairness.** Both close a gap that was genuinely there. Neither is measurably better at it.
+
+**They are not tied on cost, and that is the entire decision.**
+
+The **threshold optimizer** drops recall from 0.796 to **0.609**. Nineteen points. Look at how it got there: it closed the gap between men and women largely by catching fewer people, so it bought fairness by missing more students of both kinds. Accuracy went *up* while the tool got *worse* at its job — a useful reminder of how little accuracy is worth on a problem shaped like this.
+
+The **exponentiated gradient** drops recall to **0.718**. Eight points. Same fairness, and it keeps eleven points of recall the other method throws away.
+
+**Take the exponentiated gradient.** Eight points of recall is still a real cost, roughly thirty fewer leavers caught per thousand students, and it should be written down plainly rather than buried. What it buys is that those thirty are not disproportionately women.
 
 The other option was to fix the gap by helping fewer people. That is not a fix.
+
+**One honest note on how this choice was made.** I picked between these two by reading their **test-set** scores. In Step 3 I caught myself settling the tuition question on the test set and moved it onto cross-validation folds, and I was pleased with myself for it. This is the same act. It is more defensible — it is the final comparison, of two candidates, at the end — but by the standard I set for myself in Step 3, a stricter version selects the mitigation out-of-fold and touches test exactly once, to report. I am naming it rather than hoping nobody notices.
 
 ### Residual risk, and what I would tell the school
 
@@ -441,36 +483,41 @@ Three things I would insist on before this goes near a student.
 
 1. **The score is never shown to the student as a number.** A person told they are 78 percent likely to fail has been handed a prediction, not help.
 2. **Anything the score is built from that the school could change, the school should change.** Tuition status is the second strongest signal, and a payment plan is a cheaper intervention than a tutor.
-3. **The recall gap gets re-measured every intake.** It was 0.177 on this cohort. It is not the kind of thing that stays fixed on its own.
+3. **The recall gap gets re-measured every intake.** It was 0.177 on this cohort, with a bootstrap interval of roughly [0.08, 0.27]. Wide, because it rests on 130 female dropouts. It is not the kind of thing that stays fixed on its own, and one cohort is not enough to call it settled.
 
 ---
 
 ## Reproducibility
 
 ```
-notebooks/   01 to 05, one per step, run in order, outputs committed
-src/         data loader, path helpers, and the feature module
-data/        raw (fetched, not committed), processed, and the data dictionary
-models/      saved preprocessor, model, threshold, and full metrics with hyperparameters
-reports/     this report and its figures
+notebooks/          01 to 05, one per step, run in order, outputs committed
+src/                data loader, path helpers, and the feature module
+data/               raw (fetched, not committed), processed, and the data dictionary
+models/             saved preprocessor, model, threshold, and full metrics with hyperparameters
+reports/            this report and its figures
+.python-version     3.13, read by uv
+requirements.txt    exact pins, read off the environment that produced these outputs
 ```
 
 ```bash
-./setup.sh                  # build .venv, install pinned deps, fetch dataset
+./setup.sh                  # uv venv on Python 3.13, install pinned deps, fetch dataset
 source .venv/bin/activate
-bash run_notebooks.sh       # my own script, runs 01 to 05 in order and saves the outputs
+./run_notebooks.sh          # my own script, runs 01 to 05 in order and saves the outputs
 ```
 
-I wrote `run_notebooks.sh` because re-running five notebooks by hand, in the right order, on a clean kernel, and remembering to save each one, is a thing I got wrong more than once. The script does it in a single command. Order is not optional: 04 and 05 read files that 03 and 04 write, and running them out of sequence does not error loudly — it errors quietly against a stale artifact, which is worse.
+I wrote `run_notebooks.sh` because re-running five notebooks by hand, in the right order, on a clean kernel, and remembering to save each one, is a thing I got wrong more than once. The script does it in a single command. It also pins the interpreter to `.venv` and refuses to fall back to system Python, then checks the installed versions against the pins before it runs anything.
 
-Every number in this report is produced by running the notebooks in order against the real data with fixed seeds. **Two sources of run-to-run drift were found and closed**, and both are worth naming because both were invisible:
+Order is not optional: 04 and 05 read files that 03 and 04 write, and running them out of sequence does not error loudly — it errors quietly against a stale artifact, which is worse.
+
+Every number in this report is produced by running the notebooks in order against the real data with fixed seeds. **Three sources of silent drift were found and closed**, and all three are worth naming, because not one of them announced itself. In each case the code ran to completion and simply wrote down a different answer.
 
 - **SHAP's `LinearExplainer`**, handed a bare array, silently subsamples its background to 100 rows, unseeded. Tuition status came out at 0.90 on one run and 0.68 on the next.
-- **`ExponentiatedGradient.predict`** returns a draw from a *randomized mixture* of classifiers. Off one fitted object, the recall gap read 0.012 on one call and 0.001 on the next.
+- **`ExponentiatedGradient.predict`** returns a draw from a *randomized mixture* of classifiers, not a single fitted model. Off one fitted object, the recall gap read 0.012 on one call and 0.001 on the next.
+- **The environment itself.** `requirements.txt` was at one point rewritten against versions read off a different machine, which pinned five packages *behind* the environment that had produced every number here. Installing it would have downgraded pandas, numpy, scikit-learn, scipy and matplotlib, re-run cleanly, and quietly disagreed with this report.
 
-Both would have made this report unreproducible in a way nobody would have caught by reading it.
+The first two are seeded now. The third is checked on every run.
 
-The notebooks are committed **with their outputs**, so every table and chart here can be checked on GitHub without running anything.
+Everything else — the split, the CV folds, mutual information, PCA, all seven estimators, both mitigations, and the Step 5 bootstrap — is seeded at 42. The notebooks are committed **with their outputs**, so every table and chart here can be checked on GitHub without running anything.
 
 ---
 
@@ -478,13 +525,15 @@ The notebooks are committed **with their outputs**, so every table and chart her
 
 The project delivers a working early-warning model for student dropout that uses only enrollment-time information, catches **79.6 percent** of true dropouts at a cutoff chosen against the school's real staffing capacity, and stays simple enough to explain itself.
 
-It also delivers three findings that only appeared after I went back and fixed something I had gotten wrong.
+It also delivers four findings that only appeared after I went back and fixed something I had gotten wrong.
 
 **A feature that adds no information cannot help a model, but it can still break it** — and it breaks it in the place that matters most, which is the model's ability to say why.
 
 **The model's strongest signals are things students cannot change.** Course, and parental occupation. That is not a bug to be patched out; it is what the data says, and a school deploying this should know it before it starts flagging people.
 
-**And the harm was not where the standard fairness metric was pointing.** Demographic parity said all four attributes failed. The truth was that three of them were real gaps being reported, and one — gender — was a real gap being amplified, with the damage showing up as a recall gap that no flagging-rate metric could see.
+**The harm was not where the standard fairness metric was pointing.** Demographic parity said all four attributes failed. The truth was that three of them were real gaps being reported, and one — gender — was a real gap being amplified, with the damage showing up as a recall gap that no flagging-rate metric could see.
+
+**And rigor does not generalize on its own.** I spent Step 4 refusing to call a 0.005 lead real against a 0.020 fold swing, and then walked into Step 5 and quoted fairness numbers to three decimals off 130 female dropouts as though the noise had stayed behind in the other notebook. It had not. The bootstrap that fixed it did not overturn the finding — the recall gap is real — but it did overturn the *reason* I gave for choosing a mitigation. Skepticism is not a stance you adopt once and carry around. It is a check, and it has to be run everywhere it applies.
 
 A dropout model is not a scoreboard. It is a decision about which students get help. The right way to use this one is as a ranked prompt for a support team, checked by a person, aimed at starting a conversation early enough to matter.
 

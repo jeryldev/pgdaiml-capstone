@@ -28,7 +28,18 @@ It downloads from UCI, with no account needed, and writes `data/raw/dropout.csv`
 The binary framing is Dropout vs Graduate, with Enrolled dropped, which leaves 3,630 rows at 39.1 percent dropout.
 
 ## Sensitive attributes, for the Step 5 fairness audit
-Gender, Age at enrollment, and socioeconomic proxies (Scholarship holder, Debtor, Tuition fees up to date, parental education and occupation). All show real dropout-rate disparities, quantified in `notebooks/02`.
+Four attributes are **audited**, and they are the four in `SENSITIVE` in `src/data.py`.
+
+| Attribute | Why |
+|---|---|
+| Gender | Protected. The one attribute the model turns out to *amplify* rather than report. |
+| Age at enrollment | Banded into four groups for the audit. Carries the largest genuine base-rate gap. |
+| Scholarship holder | Socioeconomic proxy. |
+| Debtor | Socioeconomic proxy. |
+
+All four show real dropout-rate disparities before any model exists, quantified in `notebooks/02`. That matters: a gap the model *reports* is not the same as a gap the model *creates*, and Step 5 sets the two side by side rather than treating demographic parity as a verdict.
+
+A wider set of proxies — tuition status, parental education, parental occupation — is **discussed** in Step 5 but is not part of the audited four. Tuition status is handled separately as a watched near-outcome signal (Step 3). Parental occupation matters for a different reason: once SHAP values are grouped back onto features, mother's occupation ranks third among the model's drivers, which makes it a proxy worth naming even though the audit does not run on it.
 
 ## Leakage note
 The second-semester curricular-unit fields are near-outcome signals. The model trains on enrollment-time features only, with the curricular-progress columns excluded. This is narrated as leakage mitigation in Steps 3 and 5.
