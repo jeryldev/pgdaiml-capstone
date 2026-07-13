@@ -1,21 +1,26 @@
-# Pinned to the versions that actually produced the committed notebook outputs.
+# Pinned to the exact versions in the .venv that produced the committed notebook
+# outputs. Read straight off site-packages, not from memory and not from a
+# different machine.
 #
-# The previous version of this file pinned numbers I had never run (pandas 3.0.3,
-# scikit-learn 1.9.0) and listed three packages nothing imports. A requirements file
-# that does not match the environment behind the results is not reproducibility, it
-# is a decoration. These pins are read off the working environment.
+# I got this wrong once already, in a way worth recording. I rewrote this file
+# against versions I had checked somewhere else, which quietly pinned five packages
+# *behind* the environment that generated every number in the report. Installing it
+# would have downgraded pandas, numpy, scikit-learn, scipy and matplotlib, and the
+# notebooks would have re-run to completion and produced slightly different results
+# with no error anywhere. A requirements file that does not match the environment
+# behind the results is not reproducibility. It is a decoration that lies.
 #
-# Verified: fit -> SHAP LinearExplainer -> fairlearn metric, all green, on Python 3.12
-# and 3.13.
+# Python 3.13. Managed with uv.
+#   uv venv && uv pip install -r requirements.txt
 
 # Core
-pandas==3.0.2
-numpy==2.4.4
-scipy==1.17.1
+pandas==3.0.3
+numpy==2.4.6
+scipy==1.18.0
 joblib==1.5.3
 
 # Modeling
-scikit-learn==1.8.0
+scikit-learn==1.9.0
 xgboost==3.3.0
 
 # Explainability and fairness
@@ -23,9 +28,9 @@ shap==0.52.0
 fairlearn==0.14.0
 
 # Viz
-matplotlib==3.10.8
+matplotlib==3.11.0
 
-# Notebook, and headless execution for run_notebooks.sh
-jupyterlab>=4.0
-ipykernel>=6.25
-nbconvert>=7.0
+# Notebook, plus headless execution for run_notebooks.sh
+jupyterlab==4.6.1
+ipykernel==7.3.0
+nbconvert==7.17.1
