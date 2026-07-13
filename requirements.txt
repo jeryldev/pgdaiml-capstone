@@ -1,27 +1,31 @@
-# Verified to install AND run together on Python 3.11+ (tested 3.12.3):
-# fit -> SHAP TreeExplainer -> fairlearn metric, all green.
+# Pinned to the versions that actually produced the committed notebook outputs.
+#
+# The previous version of this file pinned numbers I had never run (pandas 3.0.3,
+# scikit-learn 1.9.0) and listed three packages nothing imports. A requirements file
+# that does not match the environment behind the results is not reproducibility, it
+# is a decoration. These pins are read off the working environment.
+#
+# Verified: fit -> SHAP LinearExplainer -> fairlearn metric, all green, on Python 3.12
+# and 3.13.
 
 # Core
-pandas==3.0.3
-numpy==2.4.6
-scipy==1.18.0
+pandas==3.0.2
+numpy==2.4.4
+scipy==1.17.1
+joblib==1.5.3
 
 # Modeling
-scikit-learn==1.9.0
+scikit-learn==1.8.0
 xgboost==3.3.0
-imbalanced-learn==0.14.2
 
-# Explainability & fairness
+# Explainability and fairness
 shap==0.52.0
 fairlearn==0.14.0
 
 # Viz
-matplotlib==3.11.0
-seaborn==0.13.2
+matplotlib==3.10.8
 
-# Tuning
-optuna==4.9.0
-
-# Notebook
+# Notebook, and headless execution for run_notebooks.sh
 jupyterlab>=4.0
 ipykernel>=6.25
+nbconvert>=7.0

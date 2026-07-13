@@ -1,53 +1,93 @@
 {
   "chosen": "logistic regression",
+  "operating_threshold": 0.445,
+  "threshold_rule": "quantile of out-of-fold training scores matching 45 percent staff capacity",
   "results": [
     {
       "model": "logistic regression",
-      "cv PR-AUC": 0.817,
+      "cv PR-AUC": 0.819,
       "PR-AUC": 0.822,
-      "ROC-AUC": 0.855,
-      "recall": 0.775,
-      "F1": 0.721
+      "ROC-AUC": 0.851,
+      "recall": 0.75,
+      "precision": 0.67,
+      "F1": 0.708,
+      "best params": {
+        "C": 1
+      }
+    },
+    {
+      "model": "logistic regression + PCA",
+      "cv PR-AUC": 0.818,
+      "PR-AUC": 0.821,
+      "ROC-AUC": 0.852,
+      "recall": 0.757,
+      "precision": 0.666,
+      "F1": 0.708,
+      "best params": {
+        "C": 1
+      }
     },
     {
       "model": "decision tree",
-      "cv PR-AUC": 0.718,
-      "PR-AUC": 0.716,
-      "ROC-AUC": 0.802,
-      "recall": 0.665,
-      "F1": 0.665
+      "cv PR-AUC": 0.723,
+      "PR-AUC": 0.699,
+      "ROC-AUC": 0.762,
+      "recall": 0.683,
+      "precision": 0.601,
+      "F1": 0.639,
+      "best params": {
+        "max_depth": 8
+      }
     },
     {
       "model": "random forest",
-      "cv PR-AUC": 0.816,
-      "PR-AUC": 0.831,
-      "ROC-AUC": 0.862,
-      "recall": 0.722,
-      "F1": 0.704
+      "cv PR-AUC": 0.82,
+      "PR-AUC": 0.823,
+      "ROC-AUC": 0.855,
+      "recall": 0.725,
+      "precision": 0.669,
+      "F1": 0.696,
+      "best params": {
+        "max_depth": 12,
+        "min_samples_leaf": 1
+      }
     },
     {
       "model": "xgboost",
       "cv PR-AUC": 0.824,
-      "PR-AUC": 0.829,
-      "ROC-AUC": 0.859,
+      "PR-AUC": 0.828,
+      "ROC-AUC": 0.857,
       "recall": 0.746,
-      "F1": 0.713
+      "precision": 0.665,
+      "F1": 0.703,
+      "best params": {
+        "learning_rate": 0.05,
+        "max_depth": 3
+      }
     },
     {
       "model": "svm",
-      "cv PR-AUC": 0.813,
-      "PR-AUC": 0.831,
-      "ROC-AUC": 0.869,
-      "recall": 0.732,
-      "F1": 0.722
+      "cv PR-AUC": 0.808,
+      "PR-AUC": 0.817,
+      "ROC-AUC": 0.858,
+      "recall": 0.722,
+      "precision": 0.704,
+      "F1": 0.713,
+      "best params": {
+        "C": 1
+      }
     },
     {
       "model": "mlp (neural net)",
-      "cv PR-AUC": 0.758,
-      "PR-AUC": 0.776,
-      "ROC-AUC": 0.805,
-      "recall": 0.662,
-      "F1": 0.68
+      "cv PR-AUC": 0.752,
+      "PR-AUC": 0.753,
+      "ROC-AUC": 0.798,
+      "recall": 0.669,
+      "precision": 0.667,
+      "F1": 0.668,
+      "best params": {
+        "alpha": 0.01
+      }
     }
   ]
 }

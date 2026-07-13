@@ -1,5 +1,11 @@
-# Raw & processed data — re-fetchable via data/download_data.sh (CC BY 4.0),
-# so we keep it out of git to stay lean. .gitkeep preserves the empty dirs.
+# Raw data is re-fetchable with data/download_data.sh (CC BY 4.0), and processed
+# data is rebuilt by notebook 03, so neither is committed. The .gitkeep files hold
+# the directories open.
+#
+# models/ IS committed, deliberately. It carries the fitted preprocessor, the chosen
+# model, the operating threshold, and every model's tuned hyperparameters. Notebook 05
+# loads all of it, and a reader should be able to inspect the artifact behind the
+# fairness audit without retraining anything.
 data/raw/*.csv
 data/raw/*.zip
 data/processed/*
