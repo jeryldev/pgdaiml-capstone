@@ -15,13 +15,13 @@ Every year some students leave higher education before finishing their degree. T
 
 This project builds that tool on real data from a Portuguese polytechnic. Then it does the harder work of checking whether the tool is fair.
 
-The final model is a logistic regression. This is a simple method that adds up weighted signals to score each student. I set a cutoff on purpose to match how many students the school can actually support. At that cutoff the model catches **79.6 percent** of the students who go on to drop out, using only what is known at enrollment. It is simple enough to explain its own decisions. In this project that turned out to matter more than any accuracy figure.
+The final model is a logistic regression. This is a simple method that adds up weighted signals to score each student. I set a cutoff on purpose to match how many students the school can actually support. At that cutoff the model catches **79.6 percent** of the students who go on to drop out, using only what is known at enrollment, but it flags women less reliably than men. The version I recommend shipping adds the Step 5 fairness fix. It brings recall to **71.8 percent** and closes the gender recall gap from 0.177 to 0.009, at a cost of about 8,000 EUR per 1,000 students. It is simple enough to explain its own decisions. In this project that turned out to matter more than any accuracy figure.
 
 Four findings are worth leading with. Every one of them came from fixing a mistake.
 
 **The model is not mostly a money model.** To find out what drives the score I used SHAP. SHAP measures how much each feature pushed a given prediction up or down. At first that weight was spread across many tiny yes or no columns. Once I added it back up onto the real feature each column came from, the picture changed. The strongest driver is **which course a student enrolled in**, far ahead of everything else. Whether tuition is paid sits second. **What the student's mother does for a living** sits level with holding a scholarship, right behind it. So the model is mostly spotting students who started from further back, not students in trouble.
 
-**The fairness verdict is not "everything fails."** My first check looked at four groups we cared about. These were gender, age, scholarship, and debt. The check asked whether the model flags each group at the same rate. By that test all four failed. None stayed inside the usual safe ratio of 0.8. But that was the wrong question for three of the four. Students who owe the school money drop out 76 percent of the time, against 34 percent for the rest. A model that flagged them at the same rate as everyone else would be ignoring a real 42-point gap on purpose. The fix is to put the model's flagging gap next to the real gap in the world. Then the picture separates cleanly. For debt and scholarship the model **reports** a gap that is already there. For **gender it makes the gap worse**.
+**The fairness verdict is not "everything fails."** My first check looked at four groups we cared about. These were gender, age, scholarship, and debt. The check asked whether the model flags each group at the same rate. By that test all four failed. None stayed inside the usual safe ratio of 0.8. But that was the wrong question for three of the four. Students who owe the school money drop out 76 percent of the time, against 34 percent for the rest. A model that flagged them at the same rate as everyone else would be ignoring a real 42-point gap on purpose. The fix is to put the model's flagging gap next to the real gap in the world. Only debt flags below its real gap. The model widens the gaps for scholarship, gender, and age. Gender is the one that matters, because gender is a protected trait. Scholarship is not, and its flagging tracks real risk. The age gap may involve a protected trait and is not yet resolved.
 
 **The real harm is a recall gap.** Recall means how many of the true dropouts the model actually flags. The model catches **87.7 percent of male dropouts and 70.0 percent of female ones**. Three in ten women who go on to leave are never flagged at all. You cannot see this by looking at flagging rates. It shows up only when you stop counting flags and start counting mistakes.
 
@@ -131,6 +131,8 @@ One column stands apart. Students **behind on tuition drop out 94.0 percent of t
 ## Step 3. Preprocessing, EDA, and Feature Engineering
 
 ### Cleaning and the leakage guard
+
+First the plain data checks. Step 2 found no missing cells and no duplicate rows, and I confirmed both in code rather than trusting them. A range check on the six numerics turned up nothing impossible, only a long tail of mature-student ages that reaches to 70. Those ages are real records, not errors, and age is the strongest numeric predictor, so no rows are cut. Inside the pipeline the numerics are scaled with StandardScaler and the coded categories are one-hot encoded, both fit on the training data only.
 
 The twelve curricular columns record how many courses a student took, passed, and failed in the first and second semesters. That record predicts dropout almost perfectly, because a student failing courses is a student already leaving. A model built on it would score high and help no one. So all twelve are dropped. The model then sees only what is known at enrollment. This trades raw accuracy for a warning that arrives in time to act on. That trade is on purpose.
 
@@ -307,7 +309,7 @@ Step 1 wrote down a business case and then never used it again. This is where it
 | Capacity 35% | 0.57 | 0.697 | 0.723 | 37.7% |
 | Capacity 30% | 0.64 | 0.630 | 0.768 | 32.1% |
 
-**The 0.5 default is really a decision to staff for 40 percent of students.** That is all it ever was, a staffing choice made by accident through a software default. Move the cutoff to 45 percent and recall climbs to **0.796** on the same model and the same data.
+**The 0.5 default is really a decision to staff for 40 percent of students.** That is all it ever was, a staffing choice made by accident through a software default. Move the cutoff to 45 percent and recall climbs to **0.796** on the same model and the same data. The 45 percent is a target set on the training folds. On the unseen test set it lands at 48.3 percent flagged. The cutoff itself is 0.445, which the table rounds to 0.45.
 
 One thing to be clear about. Giving the rarer class extra weight makes it easier to flag, but it also throws off the meaning of the raw scores. So a score of 0.445 does not mean a student has a 44.5 percent chance of dropping out. It just means a place in a ranking.
 
@@ -375,6 +377,8 @@ Here is the same chart with each feature's weight added back up onto the origina
 
 One caution on that ordering, because it is thinner than it looks. Mother's occupation reads 0.509 and holding a scholarship reads 0.507. That is two thousandths apart. In Step 4 I refused to call a 0.005 lead real when the data wobbled more than that, and nobody has measured how much this SHAP ranking wobbles. So this report does not claim which of those two is higher. It does not need to. Course at 1.126 is far ahead of everything, and a parent's occupation sits well above admission grade at 0.245 either way.
 
+This does not undo Step 3, where tuition led. Those earlier rankings, Cramer's V and mutual information, measure raw association one column at a time. SHAP measures something different. It measures how much the fitted model actually leans on each feature. Course leads on SHAP because its seventeen categories carry weight together that no single-column score can see. The two measures answer different questions, so they do not clash.
+
 **That changes what this project is about.** The story I had was a money story about tuition, scholarship, and debt. It is still there and still strong. But the thing above it is **which course a student enrolled in**. And sitting level with the money signals is **what the student's mother does for a living**.
 
 Neither is a warning a student can act on. Nobody chooses their mother's job, and by the time the model runs, the course is already picked. So the model is not mostly finding students in trouble. **It is largely finding students who started from further back.**
@@ -408,9 +412,15 @@ So the real-world gap goes into the table, right next to the model's gap. If the
 
 A quick guide to the table columns. "Flagging gap (DP)" is the demographic parity gap, the difference in how often two groups get flagged. The "DI ratio" is the disparate impact ratio, the flag rate of one group divided by the other, where anything below 0.8 is the usual warning sign. "Error gap (EO)" and "recall gap" measure fairness in the mistakes, not the flags. Equalized odds (EO) asks whether the model makes errors at the same rate for each group.
 
+One note on the real-gap column. It uses the dropout rates on the 726 test students, so it can be set beside the model's test-set flagging gaps. Those rates differ a little from the full-data rates in Step 2. Gender reads 0.238 here against 0.259 there, because the split lands 154 dropouts among 288 test men and 130 among 438 test women.
+
 **Debt.** Real gap 0.392, flagging gap 0.369. The model's gap is *smaller* than the one in the world. It is under-reporting a real difference, not inventing one. Its disparate impact ratio of 0.545 sits well below 0.8, and the old audit called that a failure. It is not. Debt is not a protected trait, and flagging debtors and non-debtors at the same rate is not something anyone should want.
 
 **Gender.** Real gap 0.238, flagging gap **0.350**. The gap the model creates is *bigger* than the gap in the world. **The model is making it worse.** This is the one group here where demographic parity asks exactly the right question and gets back a bad answer.
+
+**Scholarship.** Real gap 0.318, flagging gap 0.500. The model's gap is bigger here too, and by more than it is for gender. So the model amplifies this one. It does not just report it. What saves it is the same thing that saves debt. Scholarship is not a protected trait, and the heavier flagging tracks a real risk. Scholarship holders drop out at 14 percent against 48 percent for the rest. Its low disparate impact ratio of 0.171 looks alarming and is not.
+
+**Age band.** Real gap 0.433, flagging gap 0.558. The model amplifies this one as well. Age is not like scholarship and debt. Age can be a protected trait, and its error gap of 0.572 is the largest in the table. This one is not settled, and the residual risk section comes back to it.
 
 ### The harm, which is not the one I expected
 
@@ -473,6 +483,15 @@ The **exponentiated gradient** drops recall to **0.718**. That is eight points. 
 
 **Take the exponentiated gradient.** Eight points of recall is still a real cost, roughly thirty fewer leavers caught per thousand students, and it should be written down plainly rather than buried. What it buys is that those thirty missed students are not loaded onto women.
 
+**What the fix costs, in the same euros Step 4 used.** The Step 1 assumptions have to price this too, or the recommendation is a number nobody can check.
+
+| Per 1,000 students | Leavers caught | Students flagged | Value at 150 EUR a contact |
+|---|---|---|---|
+| Baseline at 0.445 | 311 | 483 | 123,595 EUR |
+| **Exponentiated gradient** | **281** | **410** | **115,455 EUR** |
+
+A saved student is worth 630 EUR after the 3-in-10 uplift, and a contact costs 150. The reduction catches thirty fewer leavers but also flags seventy fewer students, so it claws back some of the loss on outreach it no longer spends. **The fairness fix costs about 8,000 EUR per 1,000 students.** That is roughly 6 percent of the value the tool produces, and it is what the school is being asked to pay to have the tool work as well for women as it does for men. The number belongs on the table, not in a footnote.
+
 The other option was to fix the gap by helping fewer people. That is not a fix.
 
 **One honest note on how this choice was made.** I picked between these two by reading their scores on the **test set**. In Step 3 I caught myself settling the tuition question on the test set and moved it onto the training slices instead, and I was pleased with myself for it. This is the same act. It is easier to defend here, since it is the final comparison of two finalists at the very end. But by the standard I set for myself in Step 3, the stricter way is to choose the fix on the training data and touch the test set exactly once, only to report. I am naming it rather than hoping nobody notices.
@@ -483,7 +502,7 @@ The model works, and it works on things students cannot change. Course comes fir
 
 That suggests a flag is the wrong shape for the help, and Step 4 reached the same conclusion from the economics. A ranked list, read from the top, with the reason attached, is something a tutor can work with. A yes or no at-risk label stamped on a student's record is something that follows them around.
 
-Gender is fixed. Scholarship and debt are not, and that is the right call. Their gaps are real, and the model reports them rather than invents them. **The age gap is genuinely unresolved** and needs its own pass.
+Gender is fixed. Scholarship and debt are not, and that is the right call. Debt the model under-states, and scholarship it amplifies, but neither is a protected trait and both track real risk. **The age gap is genuinely unresolved** and needs its own pass.
 
 Three things I would insist on before this goes near a student.
 
@@ -499,7 +518,8 @@ Three things I would insist on before this goes near a student.
 notebooks/          01 to 05, one per step, run in order, outputs committed
 src/                data loader, path helpers, and the feature module
 data/               raw (fetched, not committed), processed, and the data dictionary
-models/             saved preprocessor, model, threshold, and full metrics with hyperparameters
+models/             preprocessor, the Step 4 model, the shipped model, the threshold,
+                    and full metrics with hyperparameters
 reports/            this report and its figures
 .python-version     3.13, read by uv
 requirements.txt    exact pins, read off the environment that produced these outputs
@@ -523,21 +543,23 @@ Every number in this report comes from running the notebooks in order against th
 
 The first two are seeded now. The third is checked on every run.
 
+**Two models are saved, on purpose.** `model.joblib` is the plain logistic regression, and every number in Step 4 is read off it. `model_shipped.joblib` is the one this report recommends deploying, the same model under the equalized-odds constraint, and it carries the fitted preprocessor with it because the reduction was fit on the encoded matrix rather than on raw columns. `metrics.json` carries a `shipped` block naming which is which, along with the recall before and after, the bootstrap interval on the gap, and what the fix costs. Saving only the first would have left `models/` describing a system Step 5 says should not be deployed.
+
 Everything else is seeded at 42. That covers the split, the cross-validation slices, mutual information, PCA, all seven models, both fairness fixes, and the Step 5 bootstrap. The notebooks are committed **with their outputs**, so every table and chart here can be checked on GitHub without running anything.
 
 ---
 
 ## Conclusion
 
-The project delivers a working early-warning model for student dropout. It uses only what is known at enrollment. It catches **79.6 percent** of true dropouts at a cutoff chosen to match the school's real staffing capacity. And it stays simple enough to explain its own decisions.
+The project delivers a working early-warning model for student dropout. It uses only what is known at enrollment. On its own it catches **79.6 percent** of true dropouts at a cutoff chosen to match the school's real staffing capacity. The version I recommend shipping adds the Step 5 fairness fix, which trades that down to **71.8 percent** to close the gender recall gap from 0.177 to 0.009. And it stays simple enough to explain its own decisions.
 
-It also delivers four findings that only appeared after I went back and fixed something I had gotten wrong.
+It also produced four lessons, and each one came from catching a mistake I had made.
 
 **A feature that adds no information cannot help a model, but it can still break it.** And it breaks it in the place that matters most, which is the model's ability to say why.
 
 **The model's strongest signals are things students cannot change.** These are course and parental occupation. That is not a bug to patch out. It is what the data says, and a school deploying this should know it before it starts flagging people.
 
-**The harm was not where the standard fairness test was pointing.** Demographic parity said all four groups failed. The truth was that three of them were real gaps being reported, and one, gender, was a real gap being made worse. The damage showed up as a recall gap that no flagging-rate test could see.
+**The harm was not where the standard fairness test was pointing.** Demographic parity said all four groups failed. The truth was messier. The model under-stated only debt. It widened the gaps for scholarship, gender, and age. Gender was the one that mattered, because gender is protected. The damage showed up as a recall gap that no flagging-rate test could see.
 
 **And rigor does not carry over on its own.** In Step 4 I refused to call a 0.005 lead real when the data swung by 0.020. Then in Step 5 I quoted fairness numbers to three decimal places off just 130 female dropouts, as if the wobble had stayed behind in the other notebook. It had not. The bootstrap that caught this did not overturn the finding. The recall gap is real. But it did overturn the *reason* I gave for choosing one fix over the other. Skepticism is not a stance you adopt once and carry around. It is a check, and you have to run it everywhere it applies.
 

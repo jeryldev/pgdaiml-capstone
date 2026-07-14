@@ -15,7 +15,7 @@ The interesting part of this project is not the model. It is the mistakes I made
 
 ## Headline results
 - Logistic regression, chosen over a tied XGBoost on interpretability. The 0.005 gap between them sits inside a 0.020 fold-to-fold swing.
-- **Recall 0.796** at an operating threshold of 0.445, chosen from out-of-fold training scores at 45 percent staff capacity.
+- **Recall 0.796** unmitigated at an operating cutoff of 0.445 (a 45 percent staff-capacity target that lands at 48.3 percent flagged on the test set). The **shipped** system adds the exponentiated-gradient fairness fix, catching **71.8 percent** with the gender recall gap closed from 0.177 to 0.009, at a cost of about 8,000 EUR per 1,000 students.
 - SHAP, summed back onto features rather than left scattered across one-hot columns, puts **Course** far ahead of everything, and puts **a parent's occupation** level with the money signals rather than below them.
 - The real fairness harm is a **recall gap, 0.877 for men, 0.700 for women**. Three in ten women who drop out are never flagged. A bootstrap confirms it, 95% interval [0.082, 0.274], never crossing zero.
 - Both mitigations reach the **same fairness**, 0.009 and 0.026 are one number inside the noise, on 130 female dropouts. They part on **cost**, eight points of recall against nineteen, so the exponentiated gradient ships.
@@ -30,7 +30,7 @@ The UCI set *Predict Students' Dropout and Academic Success* (Realinho et al., 2
 | 2 Data understanding | overview, data dictionary, disparity preview | `notebooks/02_data_understanding.ipynb`, `data/data_dictionary.md` |
 | 3 Preprocessing, EDA, FE | cleaning, EDA, features, selection, PCA | `notebooks/03_eda_feature_engineering.ipynb`, `src/features.py` |
 | 4 Modeling | 7 tuned models, comparison, operating threshold | `notebooks/04_modeling.ipynb`, `models/` |
-| 5 Ethics and bias | SHAP, fairness audit, 2 mitigations | `notebooks/05_ethics_bias_audit.ipynb` |
+| 5 Ethics and bias | SHAP, fairness audit, 2 mitigations, shipped model | `notebooks/05_ethics_bias_audit.ipynb`, `models/` |
 | 6 Presentation | technical and business decks | `presentations/` |
 | 7 Report | full write-up | `reports/final_report.md` |
 
@@ -40,9 +40,9 @@ The UCI set *Predict Students' Dropout and Academic Success* (Realinho et al., 2
 - [x] **2** Data understanding, complete data dictionary, disparity preview
 - [x] **3** Preprocessing, EDA (right test per feature type), FE, selection applied, PCA
 - [x] **4** Seven models tuned, metrics table, saved artifacts and hyperparameters, justified choice, operating threshold chosen
-- [x] **5** SHAP, limitations, fairness audit (4 attributes), two mitigations measured and seeded
-- [ ] **6** Technical deck + business deck (genuinely different)
-- [ ] **7** Final report PDF, clean-env rebuild verified, repo public + resolves incognito
+- [x] **5** SHAP, limitations, fairness audit (4 attributes), two mitigations measured and seeded, shipped model saved
+- [x] **6** Technical deck + business deck (genuinely different)
+- [x] **7** Final report PDF, clean-env rebuild verified, repo public + resolves incognito
 - [ ] **Bonus** GenAI explanation layer or deployment
 
 ## Setup
@@ -81,6 +81,21 @@ Before it runs anything it pins the interpreter to `.venv` and **refuses to fall
 The order is not a nicety either. **04 and 05 read files that 03 and 04 write.** Running 05 on its own does not throw. It silently reads a stale `model.joblib` and produces numbers that look entirely reasonable and are wrong.
 
 It takes a while. Notebook 04 tunes seven models inside cross-validation, and the SVM is slow.
+
+### Two models are saved, on purpose
+
+`models/` holds both, and confusing them would be easy.
+
+- **`model.joblib`** is the plain logistic regression. Every number in Step 4 is read off it, and it is the *unmitigated* model.
+- **`model_shipped.joblib`** is the one the report recommends deploying. Same model under an equalized-odds constraint, fit by `ExponentiatedGradient`. It carries the fitted preprocessor with it, because the reduction was fit on the encoded matrix rather than on raw columns, so scoring a new student needs both.
+
+```python
+import joblib
+art = joblib.load("models/model_shipped.joblib")
+pred = art["estimator"].predict(art["preprocessor"].transform(X), random_state=42)
+```
+
+`metrics.json` carries a `shipped` block naming which is which, with recall before and after, the bootstrap interval on the gender gap, and what the fix costs. Saving only the first would have left `models/` describing a system Step 5 says should not be deployed.
 
 ### Three reproducibility traps, if you extend this
 
