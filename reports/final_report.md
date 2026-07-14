@@ -490,7 +490,7 @@ The **exponentiated gradient** drops recall to **0.718**. That is eight points. 
 | Baseline at 0.445 | 311 | 483 | 123,595 EUR |
 | **Exponentiated gradient** | **281** | **410** | **115,455 EUR** |
 
-A saved student is worth 630 EUR after the 3-in-10 uplift, and a contact costs 150. The reduction catches thirty fewer leavers but also flags seventy fewer students, so it claws back some of the loss on outreach it no longer spends. **The fairness fix costs about 8,000 EUR per 1,000 students.** That is roughly 6 percent of the value the tool produces, and it is what the school is being asked to pay to have the tool work as well for women as it does for men. The number belongs on the table, not in a footnote.
+A saved student is worth 630 EUR after the 3-in-10 uplift, and a contact costs 150. The reduction catches thirty fewer leavers but also flags seventy fewer students, so it claws back some of the loss on outreach it no longer spends. **The fairness fix costs about 8,000 EUR per 1,000 students.** That is roughly one euro in fifteen of the value the tool produces, and it is what the school is being asked to pay to have the tool work as well for women as it does for men. The number belongs on the table, not in a footnote.
 
 The other option was to fix the gap by helping fewer people. That is not a fix.
 
