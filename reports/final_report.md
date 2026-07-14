@@ -217,7 +217,7 @@ The rule that came out of this is short. **A feature built from columns that sta
 |---|---|---|
 | `mother education tier`, `father education tier` | Folds ~30 nominal qualification codes onto a 0-to-3 ladder, keeping the order the codes throw away | Both parental qualification columns (63 dummies → 2) |
 | `first generation` | On when neither parent reached higher education | Nothing. This is genuinely new, invisible until the two columns are read together |
-| `mother isco`, `father isco` | Folds occupation codes to ISCO major groups | Both parental occupation columns (~60 dummies → 12) |
+| `mother isco`, `father isco` | Folds occupation codes to ISCO major groups | Both parental occupation columns (71 dummies → 12) |
 | `application route` | Folds 18 application-mode codes into 5 routes an admissions officer would recognise | Application mode |
 | `mature entry` | Age ≥ 23, Portugal's *Maiores de 23* route. Age enters as a straight line, but risk breaks at that route, and a straight line cannot bend | Nothing. It bends the age term |
 
@@ -236,7 +236,7 @@ Mutual information on the model's real feature set.
 | Previous qualification (grade) | 0.0559 |
 | **mature entry** | **0.0534** |
 
-`mature entry` lands sixth, above every raw column it was built from, which is the sign that bending the age term was worth doing.
+`mature entry` lands sixth, below the raw age column it bends. That is the honest order, since mutual information already sees the whole age signal. Whether the bend earns its place is a modeling question, not one this ranking settles.
 
 Last time I printed a ranking like this, wrote a sentence about which features were weakest, and then trained on every single one of them anyway. **A ranking that changes nothing is not feature selection. It is a chart.** So this time four columns actually come out, `Nacionality`, `International`, `Daytime/evening attendance`, `Educational special needs`, and the cost gets measured.
 
