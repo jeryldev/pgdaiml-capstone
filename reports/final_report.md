@@ -148,7 +148,7 @@ I split the data into a training set and a test set before any feature work that
 
 ![Continuous features by outcome](figures/continuous_by_dropout.png)
 
-**Categories.** For these I used two tools together. The chi-square test asks whether a link is real. Cramér's V then rates that link on a scale from 0 to 1, where higher means stronger. Used together they rank categories by a link that is both real and strong. On 3,630 rows almost every link is real, so Cramér's V does the real ranking.
+**Categories.** For these I used two tools together. The chi-square test asks whether a link is real. Cramér's V then rates that link on a scale from 0 to 1, where higher means stronger. Used together they rank categories by a link that is both real and strong. On 2,904 training rows almost every link is real, so Cramér's V does the real ranking.
 
 | Feature | Cramér's V |
 |---|---|
@@ -219,7 +219,7 @@ The rule that came out of this is short. **If a new feature is built from column
 |---|---|---|
 | `mother education tier`, `father education tier` | Sorts about 30 qualification codes onto a 0-to-3 ladder, keeping the order the codes throw away | Both parental qualification columns (63 dummies → 2) |
 | `first generation` | On when neither parent reached higher education | Nothing. This is genuinely new. You cannot see it until you read the two columns together |
-| `mother isco`, `father isco` | Groups the many occupation codes into a handful of broad job families | Both parental occupation columns (71 dummies → 12) |
+| `mother isco`, `father isco` | Groups the many occupation codes into a handful of broad job families | Both parental occupation columns (78 dummies → 24) |
 | `application route` | Groups 18 application codes into 5 routes an admissions officer would recognise | Application mode |
 | `mature entry` | On when age is 23 or over, Portugal's *Maiores de 23* route. Age enters as a straight line, but risk jumps at that route, and a straight line cannot bend | Nothing. It lets the age term bend |
 
@@ -335,7 +335,7 @@ What holds either way. **The ranked list is the product. The yes or no flag is n
 
 A cutoff is still needed to run the fairness audit and to report one honest number. So it goes at **0.445**, the capacity-45-percent point. This assumes staff capacity is the limit, which is the case at the low and middle outreach costs.
 
-The cost of fitting to capacity instead of chasing the most profit is small, and that deserves a number. The rows above show the most profitable cutoff for each cost. At the chosen cutoff of 0.445 the value drops a little, to **171,942, 123,595, and 51,074 EUR per 1,000 students** at 50, 150, and 300 EUR a contact. At the middle cost that is 1,694 below the best case of 125,289. So fitting the tool to what the tutoring team can staff is very nearly free.
+The cost of fitting to capacity instead of chasing the most profit is small, and that deserves a number. The rows above show the most profitable cutoff for each cost. At the chosen cutoff of 0.445 the value drops a little, to **171,942, 123,595, and 51,074 EUR per 1,000 students** at 50, 150, and 300 EUR a contact. At the middle cost that is 1,694 below the best case of 125,289. So aiming the tool at the team's capacity rather than at the most profitable cutoff is very nearly free.
 
 ### At the operating point
 
@@ -502,13 +502,16 @@ The model works, and it works on things students cannot change. Course comes fir
 
 That suggests a flag is the wrong shape for the help, and Step 4 reached the same conclusion from the economics. A ranked list, read from the top, with the reason attached, is something a tutor can work with. A yes or no at-risk label stamped on a student's record is something that follows them around.
 
+There is a catch in that, and it is worth measuring rather than waving at. The shipped model is the exponentiated gradient, which makes a fair decision but not a score. Ranked on its own vote it collapses to five coarse bands, PR-AUC 0.617 against the base model's 0.822. So the shipped model cannot order the list. The order comes from the base model's score. That sounds like the recall gap sneaking back into the order a tutor works, but under the deployment I recommend it does not. The fair model flags 410 students per 1,000, and the team can staff 450, so the whole fair list gets contacted. That fit is not automatic. The unmitigated list flags 483 and overshoots the same 450 by thirty-three, so it was the fairness fix that first pulled the list inside what the team can reach. The base score only sets the sequence they are worked in, a triage order, not a gate. Nobody is dropped for where the base model ranked them, so the fair set's recall gap of 0.009 governs, not the base model's 0.177. The seam bites in one case only. If the team cannot finish the list, the tail is dropped in base-score order and the gap comes back through the back door. So the design is to let the fair model choose who is on the list and the base model choose the order, and the fix holds as long as the list gets worked.
+
 Gender is fixed. Scholarship and debt are not, and that is the right call. Debt the model under-states, and scholarship it amplifies, but neither is a protected trait and both track real risk. **The age gap is genuinely unresolved** and needs its own pass.
 
-Three things I would insist on before this goes near a student.
+Four things I would insist on before this goes near a student.
 
 1. **The score is never shown to the student as a number.** A person told they are 78 percent likely to fail has been handed a prediction, not help.
 2. **If the score is built on something the school could change, the school should change it.** Tuition status is the second strongest signal, and a payment plan is a cheaper fix than a tutor.
 3. **The recall gap gets re-measured at every intake.** It was 0.177 on this group of students, with a bootstrap range of roughly [0.08, 0.27]. That range is wide, because it rests on just 130 female dropouts. It will not stay fixed on its own, and one group of students is not enough to call it settled.
+4. **The whole flagged list actually gets worked.** The fairness guarantee rests on the fair set of 410 fitting inside the 450 the team can staff. If the team stops short, the tail is dropped in base-score order and the recall gap comes back through the back door. The fix is only as strong as the resourcing behind it.
 
 ---
 

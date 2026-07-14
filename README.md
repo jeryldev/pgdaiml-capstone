@@ -19,6 +19,7 @@ The interesting part of this project is not the model. It is the mistakes I made
 - SHAP, summed back onto features rather than left scattered across one-hot columns, puts **Course** far ahead of everything, and puts **a parent's occupation** level with the money signals rather than below them.
 - The real fairness harm is a **recall gap, 0.877 for men, 0.700 for women**. Three in ten women who drop out are never flagged. A bootstrap confirms it, 95% interval [0.082, 0.274], never crossing zero.
 - Both mitigations reach the **same fairness**, 0.009 and 0.026 are one number inside the noise, on 130 female dropouts. They part on **cost**, eight points of recall against nineteen, so the exponentiated gradient ships.
+- The shipped fair model makes the decision but **cannot rank**. Its own vote collapses to five coarse bands, PR-AUC 0.617 against the base model's 0.822. So the fair model picks who is on the list and the base model sets the order. That holds because the fair list of **410 per 1,000 fits inside the 450 the team can staff**, where the unmitigated 483 overshot it. The fairness fix is what first pulled the list within reach, and it only fails if the list is not worked to the end.
 
 ## Dataset
 The UCI set *Predict Students' Dropout and Academic Success* (Realinho et al., 2021, Instituto Politécnico de Portalegre, Portugal). 4,424 students, 36 features plus the target. Provenance in `data/README.md`, full column reference in `data/data_dictionary.md`.
@@ -32,7 +33,7 @@ The UCI set *Predict Students' Dropout and Academic Success* (Realinho et al., 2
 | 4 Modeling | 7 tuned models, comparison, operating threshold | `notebooks/04_modeling.ipynb`, `models/` |
 | 5 Ethics and bias | SHAP, fairness audit, 2 mitigations, shipped model | `notebooks/05_ethics_bias_audit.ipynb`, `models/` |
 | 6 Presentation | technical and business decks | `presentations/` |
-| 7 Report | full write-up | `reports/final_report.md` |
+| 7 Report and repo | full write-up, open-source structure, reproducible code | `reports/final_report.md`, `reports/final_report.pdf`, this repo |
 
 ## Build checklist
 - [x] **0** Repo scaffolded, on GitHub, first commit
@@ -43,7 +44,7 @@ The UCI set *Predict Students' Dropout and Academic Success* (Realinho et al., 2
 - [x] **5** SHAP, limitations, fairness audit (4 attributes), two mitigations measured and seeded, shipped model saved
 - [x] **6** Technical deck + business deck (genuinely different)
 - [x] **7** Final report PDF, clean-env rebuild verified, repo public + resolves incognito
-- [ ] **Bonus** GenAI explanation layer or deployment
+- [ ] **Bonus** GenAI explanation layer
 
 ## Setup
 
@@ -87,7 +88,7 @@ It takes a while. Notebook 04 tunes seven models inside cross-validation, and th
 `models/` holds both, and confusing them would be easy.
 
 - **`model.joblib`** is the plain logistic regression. Every number in Step 4 is read off it, and it is the *unmitigated* model.
-- **`model_shipped.joblib`** is the one the report recommends deploying. Same model under an equalized-odds constraint, fit by `ExponentiatedGradient`. It carries the fitted preprocessor with it, because the reduction was fit on the encoded matrix rather than on raw columns, so scoring a new student needs both.
+- **`model_shipped.joblib`** is the one the report recommends deploying. Same model under an equalized-odds constraint, fit by `ExponentiatedGradient`. It carries the fitted preprocessor with it, because the reduction was fit on the encoded matrix rather than on raw columns, so scoring a new student needs both. One caveat, and it is the design of the system rather than a defect. This artifact produces the fair decision, not a ranking. Its vote collapses to five coarse bands, PR-AUC 0.617 against the base model's 0.822. So the fair model decides who is on the list and `model.joblib` sets the order within it. The fair list of 410 per 1,000 fits inside the 450 the team can staff, so the whole list gets worked and the order is a triage sequence rather than a gate. Notebook 05 measures all of this and the residual-risk section states the one condition it depends on.
 
 ```python
 import joblib
