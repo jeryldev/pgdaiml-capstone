@@ -37,9 +37,9 @@ Four attributes are **audited**, and they are the four in `SENSITIVE` in `src/da
 | Scholarship holder | Socioeconomic proxy. |
 | Debtor | Socioeconomic proxy. |
 
-All four show real dropout-rate disparities before any model exists, quantified in `notebooks/02`. That matters: a gap the model *reports* is not the same as a gap the model *creates*, and Step 5 sets the two side by side rather than treating demographic parity as a verdict.
+All four show real dropout-rate disparities before any model exists, quantified in `notebooks/02`. That matters. A gap the model *reports* is not the same as a gap the model *creates*, and Step 5 sets the two side by side rather than treating demographic parity as a verdict.
 
-A wider set of proxies — tuition status, parental education, parental occupation — is **discussed** in Step 5 but is not part of the audited four. Tuition status is handled separately as a watched near-outcome signal (Step 3). Parental occupation matters for a different reason: once SHAP values are grouped back onto features, mother's occupation ranks third among the model's drivers, which makes it a proxy worth naming even though the audit does not run on it.
+A wider set of proxies, tuition status, parental education, parental occupation, is **discussed** in Step 5 but is not part of the audited four. Tuition status is handled separately as a watched near-outcome signal (Step 3). Parental occupation matters for a different reason. Once SHAP values are grouped back onto features, mother's occupation sits level with scholarship holder among the model's strongest drivers, which makes it a proxy worth naming even though the audit does not run on it.
 
 ## Leakage note
 The second-semester curricular-unit fields are near-outcome signals. The model trains on enrollment-time features only, with the curricular-progress columns excluded. This is narrated as leakage mitigation in Steps 3 and 5.
