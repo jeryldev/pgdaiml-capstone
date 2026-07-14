@@ -97,10 +97,15 @@
     "shipped_recall": 0.718,
     "recall_gap_before": 0.177,
     "recall_gap_after": 0.009,
-    "recall_gap_bootstrap_95": [
+    "recall_gap_before_bootstrap_95": [
       0.082,
       0.274
     ],
+    "recall_gap_after_bootstrap_95": [
+      -0.118,
+      0.101
+    ],
+    "gap_convention": "the two gaps are magnitudes, the two intervals are signed, male minus female",
     "cost_of_fix_eur_per_1000": 8140,
     "rejected": "ThresholdOptimizer. Tied on fairness, and costs 19 points of recall against 8."
   }

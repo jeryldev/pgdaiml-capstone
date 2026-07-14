@@ -15,7 +15,7 @@ Every year some students leave higher education before finishing their degree. T
 
 This project builds that tool on real data from a Portuguese polytechnic. Then it does the harder work of checking whether the tool is fair.
 
-The final model is a logistic regression. This is a simple method that adds up weighted signals to score each student. I set a cutoff on purpose to match how many students the school can actually support. At that cutoff the model catches **79.6 percent** of the students who go on to drop out, using only what is known at enrollment, but it flags women less reliably than men. The version I recommend shipping adds the Step 5 fairness fix. It brings recall to **71.8 percent** and closes the gender recall gap from 0.177 to 0.009, at a cost of about 8,000 EUR per 1,000 students. It is simple enough to explain its own decisions. In this project that turned out to matter more than any accuracy figure.
+The final model is a logistic regression. This is a simple method that adds up weighted signals to score each student. I set a cutoff on purpose to match how many students the school can actually support. At that cutoff the model catches **79.6 percent** of the students who go on to drop out, using only what is known at enrollment, but it flags women less reliably than men. The version I recommend shipping adds the Step 5 fairness fix. It brings recall to **71.8 percent** and closes the gender recall gap from 0.177, which a bootstrap calls real, to 0.009, which the same bootstrap cannot tell apart from zero. That costs about 8,000 EUR per 1,000 students. It is simple enough to explain its own decisions. In this project that turned out to matter more than any accuracy figure.
 
 Four findings are worth leading with. Every one of them came from fixing a mistake.
 
@@ -443,7 +443,7 @@ Whether the model should see gender at all is a separate question, and the answe
 
 Both methods aim for **equalized odds**, not demographic parity. Equalized odds means matching the error rates across groups. The harm here is an error gap, so the fix has to work on errors, not flags. Both methods use a fixed seed, so their numbers hold still between runs.
 
-| Approach | Recall | Precision | Accuracy | Flagging gap | Error gap | Recall gap |
+| Approach | Recall | Precision | Accuracy | Flagging gap | Error gap | Recall gap (magnitude) |
 |---|---|---|---|---|---|---|
 | Baseline at 0.45 | **0.796** | 0.644 | 0.748 | 0.350 | 0.290 | 0.177 |
 | Threshold optimizer | 0.609 | 0.783 | 0.781 | 0.100 | 0.026 | 0.026 |
@@ -455,12 +455,14 @@ I should not have said that, and Step 4 is the reason why.
 
 In Step 4 I refused to hand XGBoost the win for a 0.005 lead, because the data swung by 0.020 and a gap smaller than that swing is not real. **Then I came here and quoted fairness numbers to three decimal places off a single 726-student split, without ever asking how much they wobble.** I had been careful in one place and careless in another. So I went back and checked. I re-drew the test set 2,000 times with a fixed seed and re-measured each time. That is the bootstrap.
 
+One note on signs, because the two tables read differently on purpose. The mitigation table above reports the recall gap as a **magnitude**. The bootstrap below reports it **signed, male minus female**. Baseline is +0.177 either way, so the two only part company on the mitigated rows, where 0.026 above becomes −0.026 below. The gap inverts after mitigation, and women end up caught very slightly more often than men. Both intervals span zero, so that direction carries no information at all. The fourth row compares the two magnitudes, which is why it lands at +0.008 rather than at the difference of the two signed numbers.
+
 | | Point estimate | 95% interval | |
 |---|---|---|---|
 | Baseline recall gap | +0.177 | [+0.082, +0.274] | **real** |
 | Threshold optimizer recall gap | −0.026 | [−0.142, +0.090] | indistinguishable from zero |
 | Exponentiated gradient recall gap | −0.009 | [−0.118, +0.101] | indistinguishable from zero |
-| **TO gap minus EG gap** | +0.008 | [−0.057, +0.076] | **tied** |
+| **TO gap minus EG gap, on magnitudes** | +0.008 | [−0.057, +0.076] | **tied** |
 | **EG recall minus TO recall** | **+0.109** | **[+0.075, +0.146]** | **real** |
 
 Each 95 percent interval is the range where the true value almost certainly sits. If that range includes zero, the number could just be chance. Three things fall out of the table.
@@ -524,9 +526,12 @@ data/               raw (fetched, not committed), processed, and the data dictio
 models/             preprocessor, the Step 4 model, the shipped model, the threshold,
                     and full metrics with hyperparameters
 reports/            this report and its figures
+presentations/      the two Step 6 decks, technical and business, as pptx and pdf
 .python-version     3.13, read by uv
 requirements.txt    exact pins, read off the environment that produced these outputs
 ```
+
+The two presentations live in the repository rather than in this document. `technical.pdf` is twelve slides for peers and walks the same four mistakes this report does. `business.pdf` is ten slides for the people who decide, and it leads with money and with the one choice only the school can make. Every number on both is copied from an executed notebook cell.
 
 ```bash
 ./setup.sh                  # uv venv on Python 3.13, install pinned deps, fetch dataset
@@ -546,7 +551,7 @@ Every number in this report comes from running the notebooks in order against th
 
 The first two are seeded now. The third is checked on every run.
 
-**Two models are saved, on purpose.** `model.joblib` is the plain logistic regression, and every number in Step 4 is read off it. `model_shipped.joblib` is the one this report recommends deploying, the same model under the equalized-odds constraint, and it carries the fitted preprocessor with it because the reduction was fit on the encoded matrix rather than on raw columns. `metrics.json` carries a `shipped` block naming which is which, along with the recall before and after, the bootstrap interval on the gap, and what the fix costs. Saving only the first would have left `models/` describing a system Step 5 says should not be deployed.
+**Two models are saved, on purpose.** `model.joblib` is the plain logistic regression, and every number in Step 4 is read off it. `model_shipped.joblib` is the one this report recommends deploying, the same model under the equalized-odds constraint, and it carries the fitted preprocessor with it because the reduction was fit on the encoded matrix rather than on raw columns. `metrics.json` carries a `shipped` block naming which is which, along with the recall before and after, the bootstrap interval on the gap both before and after the fix, and what the fix costs. The after-interval is the one that matters, because it is what shows the remaining 0.009 is indistinguishable from zero. Without it a reader of `models/` would have to take that on trust. Saving only the first would have left `models/` describing a system Step 5 says should not be deployed.
 
 Everything else is seeded at 42. That covers the split, the cross-validation slices, mutual information, PCA, all seven models, both fairness fixes, and the Step 5 bootstrap. The notebooks are committed **with their outputs**, so every table and chart here can be checked on GitHub without running anything.
 
@@ -554,7 +559,7 @@ Everything else is seeded at 42. That covers the split, the cross-validation sli
 
 ## Conclusion
 
-The project delivers a working early-warning model for student dropout. It uses only what is known at enrollment. On its own it catches **79.6 percent** of true dropouts at a cutoff chosen to match the school's real staffing capacity. The version I recommend shipping adds the Step 5 fairness fix, which trades that down to **71.8 percent** to close the gender recall gap from 0.177 to 0.009. And it stays simple enough to explain its own decisions.
+The project delivers a working early-warning model for student dropout. It uses only what is known at enrollment. On its own it catches **79.6 percent** of true dropouts at a cutoff chosen to match the school's real staffing capacity. The version I recommend shipping adds the Step 5 fairness fix, which trades that down to **71.8 percent** to close the gender recall gap from a real 0.177 to 0.009, a gap the bootstrap can no longer separate from zero. And it stays simple enough to explain its own decisions.
 
 It also produced four lessons, and each one came from catching a mistake I had made.
 

@@ -15,7 +15,7 @@ The interesting part of this project is not the model. It is the mistakes I made
 
 ## Headline results
 - Logistic regression, chosen over a tied XGBoost on interpretability. The 0.005 gap between them sits inside a 0.020 fold-to-fold swing.
-- **Recall 0.796** unmitigated at an operating cutoff of 0.445 (a 45 percent staff-capacity target that lands at 48.3 percent flagged on the test set). The **shipped** system adds the exponentiated-gradient fairness fix, catching **71.8 percent** with the gender recall gap closed from 0.177 to 0.009, at a cost of about 8,000 EUR per 1,000 students.
+- **Recall 0.796** unmitigated at an operating cutoff of 0.445 (a 45 percent staff-capacity target that lands at 48.3 percent flagged on the test set). The **shipped** system adds the exponentiated-gradient fairness fix, catching **71.8 percent** with the gender recall gap taken from a real 0.177 down to 0.009, which the bootstrap cannot tell apart from zero, at a cost of about 8,000 EUR per 1,000 students.
 - SHAP, summed back onto features rather than left scattered across one-hot columns, puts **Course** far ahead of everything, and puts **a parent's occupation** level with the money signals rather than below them.
 - The real fairness harm is a **recall gap, 0.877 for men, 0.700 for women**. Three in ten women who drop out are never flagged. A bootstrap confirms it, 95% interval [0.082, 0.274], never crossing zero.
 - Both mitigations reach the **same fairness**, 0.009 and 0.026 are one number inside the noise, on 130 female dropouts. They part on **cost**, eight points of recall against nineteen, so the exponentiated gradient ships.
@@ -96,7 +96,7 @@ art = joblib.load("models/model_shipped.joblib")
 pred = art["estimator"].predict(art["preprocessor"].transform(X), random_state=42)
 ```
 
-`metrics.json` carries a `shipped` block naming which is which, with recall before and after, the bootstrap interval on the gender gap, and what the fix costs. Saving only the first would have left `models/` describing a system Step 5 says should not be deployed.
+`metrics.json` carries a `shipped` block naming which is which, with recall before and after, the bootstrap interval on the gender gap before and after the fix, and what the fix costs. The after-interval is the one worth having, since it is what shows the remaining 0.009 cannot be told apart from zero. Saving only the first model would have left `models/` describing a system Step 5 says should not be deployed.
 
 ### Three reproducibility traps, if you extend this
 
