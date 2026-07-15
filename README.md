@@ -20,6 +20,7 @@ The interesting part of this project is not the model. It is the mistakes I made
 - The real fairness harm is a **recall gap, 0.877 for men, 0.700 for women**. Three in ten women who drop out are never flagged. A bootstrap confirms it, 95% interval [0.082, 0.274], never crossing zero.
 - Both mitigations reach the **same fairness**, 0.009 and 0.026 are one number inside the noise, on 130 female dropouts. They part on **cost**, eight points of recall against nineteen, so the exponentiated gradient ships.
 - The shipped fair model makes the decision but **cannot rank**. Its own vote collapses to five coarse bands, PR-AUC 0.617 against the base model's 0.822. So the fair model picks who is on the list and the base model sets the order. That holds because the fair list of **410 per 1,000 fits inside the 450 the team can staff**, where the unmitigated 483 overshot it. The fairness fix is what first pulled the list within reach, and it only fails if the list is not worked to the end.
+- **Bonus, generative AI.** A SHAP-to-sentence explanation layer, built against a rules-engine baseline and behind a verifier. A naive prompt failed all five students, printing numbers and naming gender; the guarded prompt passed all five. It runs for a grader with no key off a committed response cache.
 
 ## Dataset
 The UCI set *Predict Students' Dropout and Academic Success* (Realinho et al., 2021, Instituto Politécnico de Portalegre, Portugal). 4,424 students, 36 features plus the target. Provenance in `data/README.md`, full column reference in `data/data_dictionary.md`.
@@ -34,6 +35,7 @@ The UCI set *Predict Students' Dropout and Academic Success* (Realinho et al., 2
 | 5 Ethics and bias | SHAP, fairness audit, 2 mitigations, shipped model | `notebooks/05_ethics_bias_audit.ipynb`, `models/` |
 | 6 Presentation | technical and business decks | `presentations/` |
 | 7 Report and repo | full write-up, open-source structure, reproducible code | `reports/final_report.md`, `reports/final_report.pdf`, this repo |
+| 9 Generative AI (bonus) | explanation layer, naive vs guarded behind a verifier | `notebooks/09_genai.ipynb`, `models/genai_cache.json` |
 
 ## Build checklist
 - [x] **0** Repo scaffolded, on GitHub, first commit
@@ -44,7 +46,7 @@ The UCI set *Predict Students' Dropout and Academic Success* (Realinho et al., 2
 - [x] **5** SHAP, limitations, fairness audit (4 attributes), two mitigations measured and seeded, shipped model saved
 - [x] **6** Technical deck + business deck (genuinely different)
 - [x] **7** Final report PDF, clean-env rebuild verified, repo public + resolves incognito
-- [ ] **Bonus** GenAI explanation layer
+- [x] **Bonus** GenAI explanation layer, naive vs guarded prompts behind a mechanical verifier, runs off a committed cache with no key
 
 ## Setup
 
@@ -109,6 +111,10 @@ Every one of these produced numbers that changed while nothing else changed, and
 Everything else, the split, the CV folds, mutual information, PCA, all seven estimators, and the Step 5 bootstrap, is seeded at 42. A full re-run on the pinned environment reproduces every number in the report.
 
 To refresh the dataset without rebuilding the environment, run `bash data/download_data.sh`
+
+### The bonus notebook runs off a cache, not the network
+
+`notebooks/09_genai.ipynb` is the Step 9 explanation layer, and it is deliberately **not** in `run_notebooks.sh`, because a script that reaches a network can half-succeed. Every prompt and response is committed to `models/genai_cache.json`, so the notebook runs and renders **with no API key at all**. To refresh the cache after changing a prompt, set a free Gemini key (`export GEMINI_API_KEY=...`, from `https://aistudio.google.com/apikey`) and re-run; otherwise it reads the committed cache. The key is never written to the notebook, and a pre-commit hook refuses any commit that carries one.
 
 ## Data and citation
 Licensed **CC BY 4.0**, reuse permitted with attribution. Full attribution in `data/README.md`.

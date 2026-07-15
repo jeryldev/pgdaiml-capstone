@@ -517,6 +517,20 @@ Four things I would insist on before this goes near a student.
 
 ---
 
+## Generative AI
+
+Step 5 produces SHAP values, and a tutor cannot read a SHAP value. `Tuition fees up to date: +0.68` is true and useless to the person who has to pick up the phone. Turning that into a sentence is the one thing a language model is genuinely good for here. I built it as the optional Step 9, and I built it the way the rest of the project works, against a baseline and behind a check.
+
+There are two ways to turn a student's drivers into a note. A rules engine, a lookup table from each feature to a clause and an action, deterministic and unable to invent anything. Or a language model, handed the student's top SHAP contributions and asked for two plain sentences. The notebook builds both, and asks the honest question, what did the language model buy that the table did not.
+
+The point is not that it calls an API. The point is the verifier. Step 5 promises three times that a student never sees a number, so the prompt forbids numbers, scoring words, any driver not in that student's own list, and gender, even though the model leans on gender at a SHAP value of 0.301. Then a cell checks that the prompt actually held. To prove the check does something, the same task runs twice, once with a naive prompt and once with the guarded one. The naive prompt failed all five students. It printed probabilities and admission scores, read a mother's occupation code as "lower socioeconomic status", and named the student's gender. The guarded prompt passed all five. **A prompt is a request. The verifier is the control.**
+
+The second use is the one the brief names directly, an auto-generated summary of the exploratory analysis. The model is handed the computed statistics rather than the data, writes the paragraphs, and then every number it wrote is checked against the numbers it was given. It invented none.
+
+What the language model bought was fluency, and words for the slots the table leaves blank, the course code and the parent's occupation the table refuses to touch. What it also bought back is worth stating plainly. One guarded note still turned a parent's occupation into "less familiarity with higher education", an inference the table declined to make and one the verifier is not built to catch. The verifier is necessary, not sufficient. And everything the model knows about which number matters, it knows because it was told, in a context block that took the rest of this project to earn. **The context is the work. The generation is the easy part.** The whole notebook runs, and renders, for anyone with no key, off a committed cache that carries every prompt and every response in plain text.
+
+---
+
 ## Reproducibility
 
 ```
