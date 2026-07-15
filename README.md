@@ -35,7 +35,7 @@ The UCI set *Predict Students' Dropout and Academic Success* (Realinho et al., 2
 | 5 Ethics and bias | SHAP, fairness audit, 2 mitigations, shipped model | `notebooks/05_ethics_bias_audit.ipynb`, `models/` |
 | 6 Presentation | technical and business decks | `presentations/` |
 | 7 Report and repo | full write-up, open-source structure, reproducible code | `reports/final_report.md`, `reports/final_report.pdf`, this repo |
-| 9 Generative AI (bonus) | explanation layer, naive vs guarded behind a verifier | `notebooks/09_genai.ipynb`, `models/genai_cache.json` |
+| 9 Generative AI (bonus) | explanation layer + verifier, and a short bonus deck | `notebooks/09_genai.ipynb`, `models/genai_cache.json`, `presentations/genai_bonus.pdf` |
 
 ## Build checklist
 - [x] **0** Repo scaffolded, on GitHub, first commit
