@@ -36,3 +36,10 @@ jupyterlab==4.6.1
 notebook==7.6.0
 ipykernel==7.3.0
 nbconvert==7.17.1
+
+# Editor bridge, converts .ipynb to and from a text form so the notebooks open in
+# terminal editors rather than as raw JSON. Needed by pyworks.nvim, a Neovim plugin
+# I built (github.com/jeryldev/pyworks.nvim) that wires up Python and Jupyter tooling
+# for notebook work inside Neovim, because I love working inside a terminal. With it
+# pinned here, a fresh clone on my other laptop opens the notebooks in Neovim right away.
+jupytext==1.19.4
