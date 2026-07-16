@@ -30,7 +30,9 @@ fairlearn==0.14.0
 # Viz
 matplotlib==3.11.0
 
-# Notebook, plus headless execution for run_notebooks.sh
+# Notebook UIs, JupyterLab and the classic Notebook 7, plus headless execution
+# for run_notebooks.sh
 jupyterlab==4.6.1
+notebook==7.6.0
 ipykernel==7.3.0
 nbconvert==7.17.1

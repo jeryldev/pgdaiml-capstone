@@ -67,8 +67,23 @@ uv venv && uv pip install -r requirements.txt && bash data/download_data.sh
 
 At this point you can just read the notebooks. **They are committed with their outputs**. Every table, chart, and SHAP plot is already there, and nothing needs running to see the results.
 
+Launch from the repository root so the file browser opens on the project. Two interfaces ship with the environment and both drive the same kernels, so the choice is only about layout. **JupyterLab** is the IDE-style workspace, with a file sidebar and split panes.
+
 ```bash
 jupyter lab
+```
+
+**Jupyter Notebook** is the classic single-document view, one notebook to a tab.
+
+```bash
+jupyter notebook
+```
+
+Either command opens a browser on `localhost:8888`. To jump straight to one file rather than the file browser, name it on the command line, and the same form works for both.
+
+```bash
+jupyter lab notebooks/09_genai.ipynb
+jupyter notebook notebooks/03_eda_feature_engineering.ipynb
 ```
 
 ## Reproducing every result
